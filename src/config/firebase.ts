@@ -7,7 +7,7 @@ const firebaseConfig = {
   projectId: "wordle-ermadi",
   storageBucket: "wordle-ermadi.firebasestorage.app",
   messagingSenderId: "184540601852",
-  appId: "1:184540601852:web:9956d7cd45319159a3e679"
+  appId: "1:184540601852:web:cbf9dab0c950dd07a3e679"
 };
 
 // Initialize Firebase
