@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, deleteField, increment, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import wordData from '../data/words.json';
 
 interface GameProps {
   roomId: string;
@@ -10,7 +11,10 @@ interface GameProps {
 
 const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
-const WORDS = ['KNIFE'];
+// Import words from the JSON file
+const WORDS = wordData.words;
+// Create a set of valid words for faster lookup
+const VALID_WORDS = new Set(wordData.words);
 
 export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
   const [targetWord, setTargetWord] = useState('');
@@ -43,6 +47,9 @@ export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
   
   // Show result popup immediately when either player finishes
   const [showResultPopup, setShowResultPopup] = useState<boolean>(false);
+  // Add state for invalid word feedback
+  const [invalidWord, setInvalidWord] = useState<boolean>(false);
+  const [shakingRow, setShakingRow] = useState<boolean>(false);
 
   // Update Room status and store player name in Firebase when component mounts
   useEffect(() => {
@@ -488,6 +495,25 @@ export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
       return;
     }
     
+    // Check if the word is valid
+    if (!VALID_WORDS.has(currentGuess)) {
+      console.log("Invalid word, not in dictionary");
+      setInvalidWord(true);
+      setShakingRow(true);
+      
+      // Reset shaking animation after a short delay
+      setTimeout(() => {
+        setShakingRow(false);
+      }, 500);
+      
+      // Reset invalid word state after feedback duration
+      setTimeout(() => {
+        setInvalidWord(false);
+      }, 1500);
+      
+      return;
+    }
+    
     const newGuesses = [...guesses, currentGuess];
     setGuesses(newGuesses);
     console.log("Guess submitted, new guesses:", newGuesses);
@@ -691,9 +717,9 @@ export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
     }
     
     // If player's board, render current guess (only if we haven't reached max attempts)
-    if (isPlayer && currentGuess.length > 0 && guesses.length < MAX_ATTEMPTS) {
+    if (isPlayer && guesses.length < MAX_ATTEMPTS) {
       rows.push(
-        <div key="current-row" className="row">
+        <div key="current-row" className={`row ${shakingRow ? 'shake' : ''}`}>
           {currentGuess.split('').map((letter, j) => (
             <div key={`current-tile-${j}`} className="tile">
               {letter}
@@ -854,6 +880,11 @@ export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
                 <span>{opponentName}: {opponentScore}</span>
               </div>
             </div>
+            
+            {/* Display invalid word message */}
+            {invalidWord && (
+              <div className="invalid-word-message">Not in word list</div>
+            )}
           </div>
           
           <div className="game-content">
@@ -883,7 +914,7 @@ export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
               </div>
             </div>
           </div>
-
+          
           <div className="keyboard-container">
             {renderKeyboard()}
           </div>
