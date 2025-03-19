@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { doc, onSnapshot, updateDoc, arrayUnion, deleteField, increment, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import wordData from '../data/words.json';
+import words from 'an-array-of-english-words';
 
 interface GameProps {
   roomId: string;
@@ -11,10 +11,12 @@ interface GameProps {
 
 const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
-// Import words from the JSON file
-const WORDS = wordData.words;
+// Filter only 5-letter words and convert to uppercase
+const WORDS = words
+  .filter(word => word.length === WORD_LENGTH)
+  .map(word => word.toUpperCase());
 // Create a set of valid words for faster lookup
-const VALID_WORDS = new Set(wordData.words);
+const VALID_WORDS = new Set(WORDS);
 
 export const Game: React.FC<GameProps> = ({ roomId, playerId, playerName }) => {
   const [targetWord, setTargetWord] = useState('');
